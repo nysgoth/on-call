@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Direct Login Test</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        input { padding: 10px; margin: 5px; width: 200px; }
+        button { padding: 10px 20px; margin: 5px; }
+        #result { margin-top: 20px; padding: 10px; background: #f0f0f0; }
+        .error { color: red; }
+        .success { color: green; }
+    </style>
+</head>
+<body>
+    <h1>Direct Login Test</h1>
+    <form id="testForm">
+        <input type="text" id="username" placeholder="Username" value="engineer1"><br>
+        <input type="password" id="password" placeholder="Password" value="engineer123"><br>
+        <button type="submit">Login</button>
+    </form>
+    <div id="result"></div>
+    
+    <script>
+        const API_BASE_URL = 'http://localhost:8000';
+        const form = document.getElementById('testForm');
+        const result = document.getElementById('result');
+        
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            result.innerHTML = 'Sending request...';
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password }),
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    result.innerHTML = '<div class="success">SUCCESS! Token: ' + data.access_token.substring(0, 50) + '...</div>';
+                    sessionStorage.setItem('authToken', data.access_token);
+                    sessionStorage.setItem('currentUser', JSON.stringify(data.user));
+                    setTimeout(() => {
+                        window.location.href = 'app.html';
+                    }, 1000);
+                } else {
+                    result.innerHTML = '<div class="error">ERROR: ' + (data.detail || 'Unknown error') + '</div>';
+                }
+            } catch (error) {
+                result.innerHTML = '<div class="error">EXCEPTION: ' + error.message + '</div>';
+            }
+        });
+    </script>
+</body>
+</html>

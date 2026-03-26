@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Login</title>
+</head>
+<body>
+    <h1>Test Login</h1>
+    <form id="testForm">
+        <input type="text" id="username" placeholder="Username" value="engineer1">
+        <input type="password" id="password" placeholder="Password" value="engineer123">
+        <button type="submit">Login</button>
+    </form>
+    <div id="result"></div>
+    
+    <script>
+        document.getElementById('testForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const resultDiv = document.getElementById('result');
+            
+            resultDiv.textContent = 'Loading...';
+            
+            try {
+                const response = await fetch('http://localhost:8000/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password }),
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.textContent = 'SUCCESS! Token: ' + data.access_token.substring(0, 50) + '...';
+                    resultDiv.style.color = 'green';
+                    
+                    // Store and redirect
+                    sessionStorage.setItem('authToken', data.access_token);
+                    sessionStorage.setItem('currentUser', JSON.stringify(data.user));
+                    window.location.href = 'app.html';
+                } else {
+                    resultDiv.textContent = 'ERROR: ' + (data.detail || 'Unknown error');
+                    resultDiv.style.color = 'red';
+                }
+            } catch (error) {
+                resultDiv.textContent = 'EXCEPTION: ' + error.message;
+                resultDiv.style.color = 'red';
+                console.error('Error:', error);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>On-Call Tracker - Вход</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="login-container">
+            <h1>On-Call Tracker</h1>
+            <div class="login-form">
+                <h2>Вход в системата</h2>
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="username">Потребителско име:</label>
+                        <input type="text" id="username" name="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Парола:</label>
+                        <input type="password" id="password" name="password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Вход</button>
+                </form>
+                <div id="loginError" class="error-message"></div>
+                <div class="forgot-password-section">
+                    <a href="#" onclick="showForgotPasswordForm(); return false;" style="color: var(--dsk-primary); text-decoration: none; font-size: 14px;">Забравена парола?</a>
+                </div>
+                <div id="forgotPasswordForm" class="forgot-password-form" style="display: none;">
+                    <h2>Заявка за промяна на парола</h2>
+                    <p style="margin-bottom: 20px; color: var(--dsk-gray); font-size: 14px;">Въведете вашия имейл и нова парола. Заявката ще бъде изпратена на администратор за одобрение.</p>
+                    <form id="forgotPasswordFormElement" onsubmit="return handleForgotPasswordForm(event);">
+                        <div class="form-group">
+                            <label for="reset_email">Имейл:</label>
+                            <input type="email" id="reset_email" name="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="reset_password">Нова парола:</label>
+                            <input type="password" id="reset_password" name="password" required minlength="6" placeholder="Минимум 6 символа">
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Изпрати заявка</button>
+                            <button type="button" class="btn btn-secondary" onclick="hideForgotPasswordForm()">Отказ</button>
+                        </div>
+                    </form>
+                    <div id="forgotPasswordError" class="error-message" style="display: none;"></div>
+                </div>
+                <div class="register-section">
+                    <p>Нямаш акаунт?</p>
+                    <button type="button" class="btn btn-secondary" onclick="showRegisterForm()">Създай потребител</button>
+                </div>
+                <div id="registerForm" class="register-form" style="display: none;">
+                    <h2>Създай нов потребител</h2>
+                    <form id="registerFormElement" onsubmit="return handleRegisterForm(event);">
+                        <div class="form-group">
+                            <label for="reg_username">Потребителско име:</label>
+                            <input type="text" id="reg_username" name="username" required minlength="3" maxlength="50">
+                        </div>
+                        <div class="form-group">
+                            <label for="reg_first_name">Име:</label>
+                            <input type="text" id="reg_first_name" name="first_name" required minlength="1" maxlength="255">
+                        </div>
+                        <div class="form-group">
+                            <label for="reg_last_name">Фамилия:</label>
+                            <input type="text" id="reg_last_name" name="last_name" required minlength="1" maxlength="255">
+                        </div>
+                        <div class="form-group">
+                            <label for="reg_email">Имейл:</label>
+                            <input type="email" id="reg_email" name="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="reg_password">Парола:</label>
+                            <input type="password" id="reg_password" name="password" required minlength="6">
+                        </div>
+                        <div class="form-group">
+                            <label for="reg_role">Роля:</label>
+                            <select id="reg_role" name="role" required>
+                                <option value="engineer">Инженер</option>
+                                <option value="manager">Мениджър</option>
+                                <option value="admin">Администратор</option>
+                            </select>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Създай потребител</button>
+                            <button type="button" class="btn btn-secondary" onclick="hideRegisterForm()">Отказ</button>
+                        </div>
+                    </form>
+                    <div id="registerError" class="error-message"></div>
+                </div>
+                <div class="demo-credentials">
+                    <h3>Демо потребители:</h3>
+                    <ul>
+                        <li><strong>Инженер:</strong> engineer1 / engineer123</li>
+                        <li><strong>Мениджър:</strong> manager1 / manager123</li>
+                        <li><strong>Админ:</strong> admin1 / admin123</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="config.js?v=10"></script>
+    <script>
+        // Login form handler - attached when DOM is ready
+        // API Configuration - will be set by config.js (window.API_BASE_URL)
+        
+        // Forgot password form functions
+        function showForgotPasswordForm() {
+            const forgotPasswordForm = document.getElementById('forgotPasswordForm');
+            const loginForm = document.getElementById('loginForm');
+            if (forgotPasswordForm) {
+                forgotPasswordForm.style.display = 'block';
+            }
+            if (loginForm) {
+                loginForm.style.display = 'none';
+            }
+        }
+        
+        function hideForgotPasswordForm() {
+            const forgotPasswordForm = document.getElementById('forgotPasswordForm');
+            const loginForm = document.getElementById('loginForm');
+            const errorDiv = document.getElementById('forgotPasswordError');
+            if (forgotPasswordForm) {
+                forgotPasswordForm.style.display = 'none';
+                const form = document.getElementById('forgotPasswordFormElement');
+                if (form) {
+                    form.reset();
+                }
+            }
+            if (loginForm) {
+                loginForm.style.display = 'block';
+            }
+            if (errorDiv) {
+                errorDiv.textContent = '';
+                errorDiv.style.display = 'none';
+            }
+        }
+        
+        async function handleForgotPasswordForm(event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            
+            const emailEl = document.getElementById('reset_email');
+            const passwordEl = document.getElementById('reset_password');
+            const errorDiv = document.getElementById('forgotPasswordError');
+            
+            if (!emailEl || !passwordEl) {
+                if (errorDiv) {
+                    errorDiv.textContent = 'Грешка: Липсват полета';
+                    errorDiv.style.display = 'block';
+                    errorDiv.className = 'error-message show';
+                }
+                return false;
+            }
+            
+            const email = emailEl.value.trim();
+            const password = passwordEl.value;
+            
+            if (!email || !password) {
+                if (errorDiv) {
+                    errorDiv.textContent = 'Моля попълнете всички полета';
+                    errorDiv.style.display = 'block';
+                    errorDiv.className = 'error-message show';
+                }
+                return false;
+            }
+            
+            if (password.length < 6) {
+                if (errorDiv) {
+                    errorDiv.textContent = 'Паролата трябва да е поне 6 символа';
+                    errorDiv.style.display = 'block';
+                    errorDiv.className = 'error-message show';
+                }
+                return false;
+            }
+            
+            // Clear previous errors
+            if (errorDiv) {
+                errorDiv.textContent = '';
+                errorDiv.style.display = 'none';
+                errorDiv.className = 'error-message';
+            }
+            
+            // Show loading state
+            const submitButton = document.querySelector('#forgotPasswordFormElement button[type="submit"]');
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.textContent = 'Изпращане...';
+            }
+            
+            try {
+                const API_BASE_URL = window.API_BASE_URL || 'http://localhost:8000';
+                console.log('Sending password reset request to:', `${API_BASE_URL}/auth/password-reset-request`);
+                const response = await fetch(`${API_BASE_URL}/auth/password-reset-request`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, new_password: password }),
+                });
+                
+                console.log('Password reset response received:', response.status, response.statusText);
+                
+                if (!response.ok) {
+                    let errorMessage = 'Грешка при изпращане на заявка';
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.detail || errorMessage;
+                        console.log('Password reset error data:', errorData);
+                    } catch (parseError) {
+                        console.error('Parse error:', parseError);
+                        errorMessage = `Грешка ${response.status}: ${response.statusText}`;
+                    }
+                    
+                    if (errorDiv) {
+                        errorDiv.textContent = errorMessage;
+                        errorDiv.style.display = 'block';
+                        errorDiv.className = 'error-message show';
+                    } else {
+                        alert(errorMessage);
+                    }
+                    
+                    if (submitButton) {
+                        submitButton.disabled = false;
+                        submitButton.textContent = 'Изпрати заявка';
+                    }
+                    return false;
+                }
+                
+                const data = await response.json();
+                console.log('Password reset request successful:', data.message);
+                
+                // Show success message
+                if (errorDiv) {
+                    errorDiv.textContent = 'Заявката е изпратена успешно! Администраторът ще я прегледа и ще получиш уведомление след одобрение.';
+                    errorDiv.style.display = 'block';
+                    errorDiv.className = 'error-message show';
+                    errorDiv.style.color = '#006B3C';
+                    errorDiv.style.backgroundColor = '#E8F5E9';
+                }
+                
+                // Hide form and show login form after 3 seconds
+                setTimeout(() => {
+                    hideForgotPasswordForm();
+                    if (errorDiv) {
+                        errorDiv.textContent = '';
+                        errorDiv.style.display = 'none';
+                    }
+                }, 3000);
+                
+                if (submitButton) {
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Изпрати заявка';
+                }
+                return false;
+            } catch (error) {
+                console.error('Password reset request error:', error);
+                const errorMessage = error.message || 'Грешка при изпращане на заявка. Проверете конзолата за повече детайли.';
+                
+                if (errorDiv) {
+                    errorDiv.textContent = errorMessage;
+                    errorDiv.style.display = 'block';
+                    errorDiv.className = 'error-message show';
+                } else {
+                    alert(errorMessage);
+                }
+                
+                if (submitButton) {
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Изпрати заявка';
+                }
+                return false;
+            }
+        }
+        
+        // Register form functions
+        function showRegisterForm() {
+            const registerForm = document.getElementById('registerForm');
+            const loginForm = document.getElementById('loginForm');
+            if (registerForm) {
+                registerForm.style.display = 'block';
+            }
+            if (loginForm) {
+                loginForm.style.display = 'none';
+            }
+        }
+        
+        function hideRegisterForm() {
+            const registerForm = document.getElementById('registerForm');
+            const loginForm = document.getElementById('loginForm');
+            const registerError = document.getElementById('registerError');
+            if (registerForm) {
+                registerForm.style.display = 'none';
+                // Reset form
+                const form = document.getElementById('registerFormElement');
+                if (form) {
+                    form.reset();
+                }
+            }
+            if (loginForm) {
+                loginForm.style.display = 'block';
+            }
+            if (registerError) {
+                registerError.textContent = '';
+                registerError.style.display = 'none';
+            }
+        }
+        
+        async function handleRegisterForm(event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            
+            const usernameEl = document.getElementById('reg_username');
+            const firstNameEl = document.getElementById('reg_first_name');
+            const lastNameEl = document.getElementById('reg_last_name');
+            const emailEl = document.getElementById('reg_email');
+            const passwordEl = document.getElementById('reg_password');
+            const roleEl = document.getElementById('reg_role');
+            const errorDiv = document.getElementById('registerError');
+            
+            if (!usernameEl || !firstNameEl || !lastNameEl || !emailEl || !passwordEl || !roleEl) {
+                if (errorDiv) {
+                    errorDiv.textContent = 'Грешка: Липсват полета за регистрация';
+                    errorDiv.style.display = 'block';
+                    errorDiv.className = 'error-message show';
+                }
+                return false;
+            }
+            
+            const username = usernameEl.value.trim();
+            const firstName = firstNameEl.value.trim();
+            const lastName = lastNameEl.value.trim();
+            const email = emailEl.value.trim();
+            const password = passwordEl.value;
+            const role = roleEl.value;
+            
+            // Validate all required fields
+            if (!username) {
+                if (errorDiv) {
+                    errorDiv.textContent = 'Моля въведете потребителско име';
+                    errorDiv.style.display = 'block';
+                    errorDiv.className = 'error-message show';
+                }
+                return false;
+            }
+            
+            if (!firstName) {
+                if (errorDiv) {
+                    errorDiv.textContent = 'Моля въведете име';
+                    errorDiv.style.display = 'block';
+                    errorDiv.className = 'error-message show';
+                }
+                return false;
+            }
+            
+            if (!lastName) {
+                if (errorDiv) {
+                    errorDiv.textContent = 'Моля въведете фамилия';
+                    errorDiv.style.display = 'block';
+                    errorDiv.className = 'error-message show';
+                }
+                return false;
+            }
+            
+            if (!email) {
+                if (errorDiv) {
+                    errorDiv.textContent = 'Моля въведете имейл';
+                    errorDiv.style.display = 'block';
+                    errorDiv.className = 'error-message show';
+                }
+                return false;
+            }
+            
+            if (!password) {
+                if (errorDiv) {
+                    errorDiv.textContent = 'Моля въведете парола';
+                    errorDiv.style.display = 'block';
+                    errorDiv.className = 'error-message show';
+                }
+                return false;
+            }
+            
+            if (username.length < 3) {
+                if (errorDiv) {
+                    errorDiv.textContent = 'Потребителското име трябва да е поне 3 символа';
+                    errorDiv.style.display = 'block';
+                    errorDiv.className = 'error-message show';
+                }
+                return false;
+            }
+            
+            if (password.length < 6) {
+                if (errorDiv) {
+                    errorDiv.textContent = 'Паролата трябва да е поне 6 символа';
+                    errorDiv.style.display = 'block';
+                    errorDiv.className = 'error-message show';
+                }
+                return false;
+            }
+            
+            // Clear previous errors
+            if (errorDiv) {
+                errorDiv.textContent = '';
+                errorDiv.style.display = 'none';
+                errorDiv.className = 'error-message';
+            }
+            
+            // Show loading state
+            const submitButton = document.querySelector('#registerFormElement button[type="submit"]');
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.textContent = 'Създаване...';
+            }
+            
+            try {
+                const API_BASE_URL = window.API_BASE_URL || 'http://localhost:8000';
+                const registrationData = { 
+                    username, 
+                    first_name: firstName, 
+                    last_name: lastName, 
+                    email, 
+                    password, 
+                    role 
+                };
+                console.log('Sending registration request to:', `${API_BASE_URL}/auth/register`);
+                console.log('Registration data:', { ...registrationData, password: '***' });
+                
+                const response = await fetch(`${API_BASE_URL}/auth/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(registrationData),
+                });
+                
+                console.log('Registration response received:', response.status, response.statusText);
+                
+                if (!response.ok) {
+                    let errorMessage = 'Грешка при регистрация';
+                    try {
+                        const errorData = await response.json();
+                        // Handle different error types
+                        if (errorData.detail) {
+                            if (Array.isArray(errorData.detail)) {
+                                // Pydantic validation errors
+                                errorMessage = errorData.detail.map(e => e.msg || e.loc?.join('.') || '').join(', ');
+                            } else if (typeof errorData.detail === 'string') {
+                                errorMessage = errorData.detail;
+                            } else {
+                                errorMessage = JSON.stringify(errorData.detail);
+                            }
+                        }
+                        console.log('Registration error data:', errorData);
+                    } catch (parseError) {
+                        console.error('Parse error:', parseError);
+                        errorMessage = `Грешка ${response.status}: ${response.statusText}`;
+                    }
+                    
+                    if (errorDiv) {
+                        errorDiv.textContent = errorMessage;
+                        errorDiv.style.display = 'block';
+                        errorDiv.className = 'error-message show';
+                    } else {
+                        alert(errorMessage);
+                    }
+                    
+                    if (submitButton) {
+                        submitButton.disabled = false;
+                        submitButton.textContent = 'Създай потребител';
+                    }
+                    return false;
+                }
+                
+                const data = await response.json();
+                console.log('Registration successful, user:', data.username);
+                
+                // Show success message
+                if (errorDiv) {
+                    errorDiv.textContent = 'Потребителят е създаден успешно! Твоят акаунт чака одобрение от администратор. Ще получиш уведомление след одобрение.';
+                    errorDiv.style.display = 'block';
+                    errorDiv.className = 'error-message show';
+                    errorDiv.style.color = '#006B3C';
+                    errorDiv.style.backgroundColor = '#E8F5E9';
+                }
+                
+                // Hide register form and show login form after 2 seconds
+                setTimeout(() => {
+                    hideRegisterForm();
+                    if (errorDiv) {
+                        errorDiv.textContent = '';
+                        errorDiv.style.display = 'none';
+                    }
+                }, 2000);
+                
+                if (submitButton) {
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Създай потребител';
+                }
+                return false;
+            } catch (error) {
+                console.error('Registration error:', error);
+                const errorMessage = error.message || 'Грешка при регистрация. Проверете конзолата за повече детайли.';
+                
+                if (errorDiv) {
+                    errorDiv.textContent = errorMessage;
+                    errorDiv.style.display = 'block';
+                    errorDiv.className = 'error-message show';
+                } else {
+                    alert(errorMessage);
+                }
+                
+                if (submitButton) {
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Създай потребител';
+                }
+                return false;
+            }
+        }
+        
+        // Attach login form handler
+        (function() {
+            function attachLoginHandler() {
+                const API_BASE_URL = window.API_BASE_URL || 'http://localhost:8000';
+                const form = document.getElementById('loginForm');
+                
+                if (!form) {
+                    console.error('Login form not found!');
+                    return;
+                }
+                
+                form.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    const usernameEl = document.getElementById('username');
+                    const passwordEl = document.getElementById('password');
+                    const errorDiv = document.getElementById('loginError');
+                    const submitButton = document.querySelector('button[type="submit"]');
+                    
+                    if (!usernameEl || !passwordEl) {
+                        if (errorDiv) {
+                            errorDiv.textContent = 'Грешка: Липсват полета за вход';
+                            errorDiv.style.display = 'block';
+                            errorDiv.className = 'error-message show';
+                        }
+                        return false;
+                    }
+                    
+                    const username = usernameEl.value.trim();
+                    const password = passwordEl.value;
+                    
+                    if (!username || !password) {
+                        if (errorDiv) {
+                            errorDiv.textContent = 'Моля въведете потребителско име и парола';
+                            errorDiv.style.display = 'block';
+                            errorDiv.className = 'error-message show';
+                        }
+                        return false;
+                    }
+                    
+                    if (errorDiv) {
+                        errorDiv.textContent = '';
+                        errorDiv.style.display = 'none';
+                        errorDiv.className = 'error-message';
+                    }
+                    
+                    if (submitButton) {
+                        submitButton.disabled = true;
+                        submitButton.textContent = 'Влизане...';
+                    }
+                    
+                    try {
+                        const response = await fetch(`${API_BASE_URL}/auth/login`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ username, password }),
+                        });
+                        
+                        if (!response.ok) {
+                            let errorMessage = 'Невалидно потребителско име или парола';
+                            try {
+                                const errorData = await response.json();
+                                errorMessage = errorData.detail || errorMessage;
+                            } catch (parseError) {
+                                errorMessage = `Грешка ${response.status}: ${response.statusText}`;
+                            }
+                            
+                            if (errorDiv) {
+                                errorDiv.textContent = errorMessage;
+                                errorDiv.style.display = 'block';
+                                errorDiv.className = 'error-message show';
+                            }
+                            
+                            if (submitButton) {
+                                submitButton.disabled = false;
+                                submitButton.textContent = 'Вход';
+                            }
+                            if (passwordEl) {
+                                passwordEl.value = '';
+                            }
+                            return false;
+                        }
+                        
+                        const data = await response.json();
+                        sessionStorage.setItem('authToken', data.access_token);
+                        sessionStorage.setItem('currentUser', JSON.stringify(data.user));
+                        window.location.replace('app.html');
+                        return false;
+                    } catch (error) {
+                        if (errorDiv) {
+                            errorDiv.textContent = error.message || 'Грешка при вход';
+                            errorDiv.style.display = 'block';
+                            errorDiv.className = 'error-message show';
+                        }
+                        if (submitButton) {
+                            submitButton.disabled = false;
+                            submitButton.textContent = 'Вход';
+                        }
+                        if (passwordEl) {
+                            passwordEl.value = '';
+                        }
+                        return false;
+                    }
+                });
+            }
+            
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', attachLoginHandler);
+            } else {
+                attachLoginHandler();
+            }
+        })();
+        
+    </script>
+    <script src="app.js?v=10"></script>
+</body>
+</html>

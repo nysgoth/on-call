@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>On-Call Tracker</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="loading" style="text-align: center; padding: 50px; font-size: 18px;">Зареждане...</div>
+    <div id="debug-panel" style="position: fixed; bottom: 10px; right: 10px; background: white; border: 1px solid #ccc; padding: 10px; max-width: 300px; max-height: 400px; overflow: auto; font-size: 11px; z-index: 9999; display: none;">
+        <button onclick="window.DebugLogger.exportReport()" style="margin-bottom: 10px;">Експорт на логове</button>
+        <button onclick="document.getElementById('debug-panel').style.display='none'" style="margin-bottom: 10px;">Скрий</button>
+    </div>
+    <button onclick="document.getElementById('debug-panel').style.display='block'" style="position: fixed; bottom: 10px; right: 10px; z-index: 10000; padding: 5px 10px; font-size: 10px;">Debug</button>
+    <script src="config.js?v=10"></script>
+    <script src="debug.js?v=10"></script>
+    <script src="app.js?v=10"></script>
+    <script>
+        // Direct initialization with full logging
+        (function() {
+            window.DebugLogger.log('app.html inline script executing');
+            
+            // Get auth from sessionStorage
+            const authToken = sessionStorage.getItem('authToken');
+            const userStr = sessionStorage.getItem('currentUser');
+            
+            window.DebugLogger.log('SessionStorage check', {
+                hasToken: !!authToken,
+                hasUser: !!userStr,
+                tokenLength: authToken ? authToken.length : 0
+            });
+            
+            if (!authToken || !userStr) {
+                window.DebugLogger.error('No auth found, redirecting to login');
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            let currentUser;
+            try {
+                currentUser = JSON.parse(userStr);
+                window.DebugLogger.log('User parsed successfully', {
+                    username: currentUser.username,
+                    role: currentUser.role
+                });
+            } catch (e) {
+                window.DebugLogger.error('Error parsing user', e);
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            // Wait for app.js to load, then call loadMainApp
+            let attempts = 0;
+            const maxAttempts = 50; // Increased attempts
+            let appLoaded = false;
+            
+            function tryLoadApp() {
+                // Prevent multiple calls
+                if (appLoaded) {
+                    window.DebugLogger.log('App already loaded, skipping');
+                    return;
+                }
+                
+                attempts++;
+                
+                // Check if app.js is loaded first
+                if (!window.appJsLoaded && attempts < 10) {
+                    // app.js not loaded yet, wait more
+                    setTimeout(tryLoadApp, 100);
+                    return;
+                }
+                
+                // Check if app.js is loaded by checking for window.loadMainApp
+                const loadMainAppFn = window.loadMainApp;
+                
+                if (loadMainAppFn && typeof loadMainAppFn === 'function') {
+                    window.DebugLogger.log(`loadMainApp found on attempt ${attempts}, calling it`);
+                    appLoaded = true;
+                    try {
+                        loadMainAppFn();
+                        window.DebugLogger.log('loadMainApp called successfully');
+                        // Remove loading message after a moment
+                        setTimeout(function() {
+                            const loading = document.getElementById('loading');
+                            if (loading && loading.parentNode) {
+                                loading.remove();
+                            }
+                        }, 100);
+                    } catch (e) {
+                        window.DebugLogger.error('Error in loadMainApp', e);
+                        const loading = document.getElementById('loading');
+                        if (loading) {
+                            loading.innerHTML = 'Грешка: ' + (e.message || 'Неизвестна грешка') + '<br><a href="index.html">Върни се</a>';
+                        }
+                    }
+                } else if (attempts < maxAttempts && !appLoaded) {
+                    // Check what's available for debugging
+                    if (attempts % 10 === 0) {
+                        window.DebugLogger.log(`Attempt ${attempts}/${maxAttempts}`, {
+                            windowLoadMainAppExists: typeof window.loadMainApp !== 'undefined',
+                            windowAppJsExists: typeof window !== 'undefined',
+                            scriptsLoaded: Array.from(document.scripts).map(s => s.src).join(', ')
+                        });
+                    }
+                    setTimeout(tryLoadApp, 100); // Reduced delay
+                } else if (!appLoaded) {
+                    window.DebugLogger.error(`loadMainApp not found after ${maxAttempts} attempts`, {
+                        windowLoadMainApp: typeof window.loadMainApp,
+                        allWindowKeys: Object.keys(window).filter(k => k.includes('load') || k.includes('App')).join(', ')
+                    });
+                    const loading = document.getElementById('loading');
+                    if (loading) {
+                        loading.innerHTML = `
+                            Грешка: Не може да се зареди приложението.<br>
+                            <button onclick="window.DebugLogger.exportReport()">Експорт на логове</button><br>
+                            <a href="index.html">Върни се към входа</a>
+                        `;
+                    }
+                }
+            }
+            
+            // Wait for all scripts to load - use window.onload to ensure all scripts are loaded
+            if (document.readyState === 'loading') {
+                window.addEventListener('load', function() {
+                    window.DebugLogger.log('Window load event fired, starting app load');
+                    setTimeout(tryLoadApp, 50);
+                }, { once: true });
+                
+                // Also try on DOMContentLoaded as fallback
+                document.addEventListener('DOMContentLoaded', function() {
+                    window.DebugLogger.log('DOMContentLoaded fired, will try after window load');
+                }, { once: true });
+            } else {
+                // DOM already ready, check if scripts are loaded
+                window.DebugLogger.log('DOM already ready, checking scripts');
+                if (document.readyState === 'complete') {
+                    // All scripts should be loaded
+                    setTimeout(tryLoadApp, 50);
+                } else {
+                    // Wait for window load
+                    window.addEventListener('load', function() {
+                        window.DebugLogger.log('Window load event fired (late), starting app load');
+                        setTimeout(tryLoadApp, 50);
+                    }, { once: true });
+                }
+            }
+        })();
+    </script>
+</body>
+</html>
